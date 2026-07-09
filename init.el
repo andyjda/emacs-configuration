@@ -928,7 +928,7 @@ Call `copy-message-return' on the result. If optional arg SKIP-COPY is non-nil,
 (defun downloads-latest ()
   "Open the latest file added to the Downloads directory"
   (interactive)
-  (find-file (latest-file "/Users/andrewjda/Downloads/")))
+  (find-file (latest-file "/Users/andyjda/Downloads/")))
 
 (defun list-files-newest-first (directory)
   "List files in `directory', sorted by modification date, newest first."
