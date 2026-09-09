@@ -732,7 +732,42 @@ else `org-next-visible-heading'"
   ;; NOTE right now it gets buggy when I try to add multiple entries
   ;; for the same day.
   ;; TODO try to fix this
-  ;; Do we want to always add the TODO note?
+
+  ;; default to non-TODO entries
+  (defun my/org-journal-new-scheduled-entry (prefix &optional scheduled-time)
+    "Create a new entry in the future with an active timestamp.
+
+With non-nil prefix argument create a TODO entry.
+Otherwise, create a regular entry.
+This function is meant to override the original
+`org-journal-new-scheduled-entry', which uses the prefix argument the
+other way around. I prefer the default to be a non-TODO entry.
+
+This function is called from within `org-journal-new-date-entry'"
+    (interactive "P")
+    (let* ((org-time-was-given nil) (org-end-time-was-given nil)
+           (time (or scheduled-time (org-time-string-to-time (org-read-date nil nil nil "Date:"))))
+           org-journal-carryover-items)
+      (when (time-less-p time (current-time))
+        (user-error "Scheduled time needs to be in the future"))
+      (org-journal-new-entry nil time t)
+      (when prefix
+        (insert "TODO "))
+      (if org-time-was-given
+          (insert (format-time-string org-journal-time-format time)))
+      (save-excursion
+        (insert "\n"
+                org-journal-scheduled-string
+                (if (> (length org-journal-scheduled-string) 0) " " ""))
+        (org-insert-time-stamp
+         time org-time-was-given nil nil nil (list
+                                              org-end-time-was-given)))))
+
+  (advice-add 'org-journal-new-scheduled-entry
+              :override #'my/org-journal-new-scheduled-entry)
+
+  ;; TODO the `read-only-mode' in org-journal is almost never useful
+  ;; -- turn it off by default
 
   :custom
   (org-journal-dir "~/org/journal/")
