@@ -1077,6 +1077,8 @@ Otherwise, use OG-FILE's relative name."
   '(my-modes "~/.emacs.d/custom/modes")
   '(crafting-interpreters "~/CraftingInterpreters")
   '(practice-notebook "~/org/practice_notebook.org")
+  '(guitar-notebook "~/org/practice_notebook.org")
+  '(words-im-learning "~/org/words_im_learning.org")
   '(chtu-todo "~/org/chtu_todo.org")
   '(gym-notes "~/org/gym_exercise_notes.org")
   '(papers-and-notes "~/papers and notes/notes.org")
