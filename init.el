@@ -3445,6 +3445,121 @@ middle of the window instead."
             (comint-output-read-only-mode t)
             (comint-fold-setup)))
 
+;;;;; terminal emulator
+(use-package ghostel
+  :custom
+  ;; attempting to support this in `sticky-shell-mode'
+  ;; TODO this doesn't appear to work super well because it doesn't interact
+  ;; well with character insertion
+  (sticky-shell-supported-modes (append
+				 sticky-shell-supported-modes
+				 '('ghostel-mode #'ghostel-previous-prompt)))
+  :bind (("C-x m" . ghostel)
+         :map ghostel-mode-map
+         ("C-c C-p" . ghostel-previous-prompt)
+         ("C-c C-n" . ghostel-next-prompt)
+	 ("C-c M-o" . ghostel-clear-scrollback)
+	 :map ghostel-semi-char-mode-map
+	 ("M-r" . isearch-from-bottom)
+	 ("M-s" . isearch-from-top)
+	 ("C-s" . isearch-forward)
+	 ("C-<up>" . previous-line)
+	 ("C-<down>" . next-line)
+	 ;; TODO potentially add logic such that, if at prompt, you only copy
+	 ;; the command and not the full prompt
+	 ("M-w" . dwim-copy)
+         :map project-prefix-map
+         ("m" . ghostel-project)
+         ("M" . ghostel-project-list-buffers))
+
+  :config
+  ;; convenient function for inserting commands
+  (defun ghostel-send-input (cmd)
+    "Insert CMD and press enter"
+    (ghostel-send-string cmd)
+    (ghostel-send-key "return"))
+
+  ;; support for folding
+  (defun ghostel-fold ()
+    "Folding function for `ghostel' buffers.
+Uses `ghostel-previous-prompt' and `ghostel-next-prompt' to determine boundaries
+of region to fold."
+    (interactive)
+    (my--fold
+     (progn (ghostel-previous-prompt 1)(end-of-line) (point))
+     (progn (ghostel-next-prompt 1) (previous-line)
+            (end-of-line) (point))))
+
+  (defun ghostel-unfold ()
+    "Unfolding function for `ghostel' buffers.
+Uses `ghostel-previous-prompt' and `ghostel-next-prompt' to determine boundaries
+of region to unfold."
+    (interactive)
+    (save-excursion
+      (my--unfold (progn (ghostel-previous-prompt 1) (end-of-line)
+			 (point))
+                  (progn (ghostel-next-prompt 1)
+			 (previous-line) (end-of-line)
+			 (point)))))
+
+  (defun ghostel-fold-all ()
+    "Fold the ouputs of all prompts in a `ghostel' buffer.
+This makes it easy to see the whole history of prompts,
+temporarily hiding outputs"
+    (interactive)
+    (save-excursion
+      (goto-char (point-max))
+      (while-let ((previous (ghostel-previous-prompt 1))
+                  (start (progn previous (end-of-line)
+				(point)))
+                  (end (progn (ghostel-next-prompt 1)
+                              (previous-line) (end-of-line)
+                              (point))))
+	(my--fold start end)
+	(ghostel-previous-prompt 1))))
+
+  (defun ghostel-fold-setup ()
+    "Set the local `folding-functions' for a `ghostel' buffer"
+    (setq-local
+     folding-functions
+     '((fold-func . ghostel-fold)
+       (unfold-func . ghostel-unfold)
+       (unfold-all-func . ignore))
+     folded-appearance (concat "\n" folded-appearance)))
+
+  ;; project
+  (add-to-list 'project-switch-commands '(ghostel-project "Ghostel") t)
+  (add-to-list 'project-switch-commands
+	       '(ghostel-project-list-buffers "Ghostel buffers") t)
+  (add-to-list 'ghostel-eval-cmds '("magit-status-setup-buffer"
+				    magit-status-setup-buffer))
+
+  ;; ;; automatically activate python venv
+  ;; (defun python-ghostel-activate-venv ()
+  ;;   (interactive)
+  ;;   (let ((venv-cmd (python-venv--activate-cmd)))
+  ;;     (when venv-cmd
+  ;;       (ghostel-send-input venv-cmd))))
+  ;; (advice-add 'ghostel-project :after #'python-ghostel-activate-venv)
+
+  ;; TODO would be good to try to collect all useful commands and then build an
+  ;; adaptable layer on top, that can easily be used in shells/terminals with
+  ;; similar but different configurations and needs
+  ;; (defun ghostel-update-python-venv ()
+  ;;   (interactive)
+  ;;   (ghostel-send-input
+  ;;    (concat
+  ;;     "deactivate || echo 'venv not active, moving on' "
+  ;;     "&& rm -rf .venv "
+  ;;     "&& uv venv"
+  ;;     "&& source .venv/bin/activate "
+  ;;     "&& make lock "
+  ;;     "&& make install")))
+
+  :hook
+  (ghostel-mode . ghostel-fold-setup)
+  (after-init . ghostel-compile-global-mode))
+
 ;;;; SPECIAL VIEWS (web, PDF, ebooks)
 (use-package webkit-mac-enhance
   :defer 1
