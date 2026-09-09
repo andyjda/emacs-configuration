@@ -419,10 +419,12 @@
   (setq org-log-done nil)
 
   (setq vc-follow-symlinks t)
+  ;; TODO work on a better way to "pull" the agenda files from iCloud
+  ;; when needed
   (setq org-agenda-files '(
                            "~/org/TODO.org"
-                           "~/org/ToBuy.org"
-                           "~/org/chtu_todo.org"
+                           ;; "~/org/ToBuy.org"
+                           "~/org/shows_to_look_into.org"
                            "~/org/saved_links.org"
                            "~/org/journal/current_journal_file.org"))
 
@@ -573,6 +575,13 @@ else `org-next-visible-heading'"
 	 ("C-c n" . my/org-next)))
 
 ;;;;; org ql
+;; TODO it'd be nice to have a transient menu for `org-ql-search'
+;; if I'm reading the docs right, there's a transient for the results
+;; buffer but not for when you're running the search
+;; (https://github.com/alphapapa/org-ql#org-ql-search)
+;;
+;; TODO ensure that (deadline auto) is correctly parsed when saved
+;; into a link; right now it becomes (deadline "auto")
 (use-package org-ql)
 
 ;;;;; org roam
